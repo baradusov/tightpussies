@@ -1,5 +1,5 @@
 # Сайт для телеграм-канала «тесные киски»
 
-Канал https://tlinks.run/tightpussies
+Канал https://t.me/tightpussies
 
 Сайт https://tightpussies.ru/
