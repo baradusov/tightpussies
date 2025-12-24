@@ -1,5 +1,6 @@
 import { motion, useMotionValue, useMotionValueEvent, animate } from 'motion/react';
 import { useState, useCallback, useRef, useMemo } from 'react';
+import type { PointerEvent, CSSProperties } from 'react';
 import { getVisibleImages } from '../../lib/globalLayout';
 import { Lightbox } from '../Lightbox/Lightbox';
 import type { ImageMeta } from '../../types';
@@ -39,7 +40,7 @@ export function Canvas({ images }: CanvasProps) {
     return getVisibleImages(viewX, viewY, viewWidth, viewHeight, images);
   }, [panPosition.x, panPosition.y, images]);
 
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+  const handlePointerDown = useCallback((e: PointerEvent) => {
     // Stop any ongoing animations
     animationRef.current.x?.stop();
     animationRef.current.y?.stop();
@@ -54,7 +55,7 @@ export function Canvas({ images }: CanvasProps) {
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   }, []);
 
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+  const handlePointerMove = useCallback((e: PointerEvent) => {
     if (!isDragging.current) return;
 
     const deltaX = e.clientX - lastPos.current.x;
@@ -88,7 +89,7 @@ export function Canvas({ images }: CanvasProps) {
     panY.set(panY.get() + deltaY * dragSmoothing);
   }, [panX, panY]);
 
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+  const handlePointerUp = useCallback((e: PointerEvent) => {
     if (!isDragging.current) return;
     isDragging.current = false;
     (e.target as HTMLElement).releasePointerCapture(e.pointerId);
@@ -140,11 +141,10 @@ export function Canvas({ images }: CanvasProps) {
           style={{ x: panX, y: panY }}
         >
           {visibleImages.map(({ image, renderX, renderY }) => (
-            <div
+            <ImageWithPlaceholder
               key={`${image.id}-${renderX}-${renderY}`}
-              className={styles.imageContainer}
+              src={`/images/${image.id}.jpg`}
               style={{
-                position: 'absolute',
                 left: renderX,
                 top: renderY,
                 width: image.width,
@@ -152,21 +152,7 @@ export function Canvas({ images }: CanvasProps) {
                 cursor: 'pointer',
               }}
               onClick={() => handleImageClick(image.id)}
-            >
-              <img
-                src={`/images/${image.id}.jpg`}
-                alt=""
-                loading="lazy"
-                draggable={false}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  borderRadius: '8px',
-                  pointerEvents: 'none',
-                }}
-              />
-            </div>
+            />
           ))}
         </motion.div>
       </div>
@@ -175,5 +161,32 @@ export function Canvas({ images }: CanvasProps) {
         <Lightbox image={lightboxImage} onClose={closeLightbox} />
       )}
     </>
+  );
+}
+
+interface ImageWithPlaceholderProps {
+  src: string;
+  style?: CSSProperties;
+  onClick?: () => void;
+}
+
+function ImageWithPlaceholder({ src, style, onClick }: ImageWithPlaceholderProps) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <div
+      className={`${styles.imageContainer} ${loaded ? styles.imageContainerLoaded : ''}`}
+      style={style}
+      onClick={onClick}
+    >
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        draggable={false}
+        className={`${styles.image} ${loaded ? styles.imageVisible : ''}`}
+        onLoad={() => setLoaded(true)}
+      />
+    </div>
   );
 }
