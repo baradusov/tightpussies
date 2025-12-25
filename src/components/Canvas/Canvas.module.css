@@ -5,21 +5,23 @@
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  cursor: grab;
   background-color: gainsboro;
-}
-
-.canvas:active {
-  cursor: grabbing;
-}
-
-/* Disable hover effects while dragging */
-.canvas:active * {
-  pointer-events: none !important;
 }
 
 .panContainer {
   will-change: transform;
+}
+
+.canvasIdle {
+  cursor: grab;
+}
+
+.canvasGrabbing {
+  cursor: grabbing;
+}
+
+.canvasGrabbing * {
+  cursor: grabbing !important;
 }
 
 .imageContainer {
@@ -29,6 +31,7 @@
   background: linear-gradient(135deg, #f4f6fb, #d8deec, #f4f6fb);
   background-size: 260% 260%;
   animation: loadingShimmer 2.6s ease-in-out infinite;
+  cursor: inherit;
 }
 
 .imageContainerLoaded {

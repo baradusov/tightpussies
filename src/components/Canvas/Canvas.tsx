@@ -16,6 +16,7 @@ export function Canvas({ images }: CanvasProps) {
 
   const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
   const [lightboxImage, setLightboxImage] = useState<ImageMeta | null>(null);
+  const [isGrabbing, setIsGrabbing] = useState(false);
 
   const isDragging = useRef(false);
   const hasDragged = useRef(false);
@@ -46,6 +47,7 @@ export function Canvas({ images }: CanvasProps) {
     animationRef.current.y?.stop();
 
     isDragging.current = true;
+    setIsGrabbing(true);
     hasDragged.current = false;
     const now = Date.now();
     dragStartPos.current = { x: e.clientX, y: e.clientY, time: now };
@@ -92,6 +94,7 @@ export function Canvas({ images }: CanvasProps) {
   const handlePointerUp = useCallback((e: PointerEvent) => {
     if (!isDragging.current) return;
     isDragging.current = false;
+    setIsGrabbing(false);
     (e.target as HTMLElement).releasePointerCapture(e.pointerId);
 
     // Apply inertia animation
@@ -126,7 +129,7 @@ export function Canvas({ images }: CanvasProps) {
   return (
     <>
       <div
-        className={styles.canvas}
+        className={`${styles.canvas} ${isGrabbing ? styles.canvasGrabbing : styles.canvasIdle}`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -149,7 +152,6 @@ export function Canvas({ images }: CanvasProps) {
                 top: renderY,
                 width: image.width,
                 height: image.height,
-                cursor: 'pointer',
               }}
               onClick={() => handleImageClick(image.id)}
             />
