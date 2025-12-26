@@ -1,5 +1,22 @@
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
+import { generatePrerender } from './scripts/prerender-html'
+
+// Plugin to inject pre-rendered HTML for instant FCP
+function prerenderPlugin(): Plugin {
+  return {
+    name: 'prerender',
+    apply: 'build',
+    transformIndexHtml(html) {
+      const prerenderedHtml = generatePrerender()
+      // Inject before #root so it shows instantly, React will remove it
+      return html.replace(
+        '<div id="root"></div>',
+        `${prerenderedHtml}<div id="root"></div>`
+      )
+    }
+  }
+}
 
 // Plugin to inline only main CSS into HTML (not lazy-loaded chunks)
 function inlineCssPlugin(): Plugin {
@@ -41,7 +58,7 @@ function inlineCssPlugin(): Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), inlineCssPlugin()],
+  plugins: [react(), prerenderPlugin(), inlineCssPlugin()],
   build: {
     cssCodeSplit: true,
   }
