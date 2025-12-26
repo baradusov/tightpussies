@@ -1,13 +1,3 @@
-type ImageSize = 'original' | 'thumb';
-
-export function getImageUrl(id: string, size: ImageSize = 'original'): string {
-  if (size === 'original') {
-    return getOriginalUrl(id);
-  }
-  // Default thumb (1x)
-  return `/images/thumbs/${id}-250w.webp`;
-}
-
 export function getOriginalUrl(id: string): string {
   if (import.meta.env.DEV) {
     return `/images/${id}.jpg`;
