@@ -1,11 +1,12 @@
 import { motion, useMotionValue, useMotionValueEvent, animate } from 'motion/react';
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, lazy, Suspense } from 'react';
 import type { PointerEvent, CSSProperties } from 'react';
 import { getVisibleImages } from '../../lib/globalLayout';
 import { getThumbUrl, getThumbSrcSet } from '../../lib/imageUrl';
-import { Lightbox } from '../Lightbox/Lightbox';
 import type { ImageMeta } from '../../types';
 import styles from './Canvas.module.css';
+
+const Lightbox = lazy(() => import('../Lightbox/Lightbox').then(m => ({ default: m.Lightbox })));
 
 interface CanvasProps {
   images: ImageMeta[];
@@ -161,7 +162,9 @@ export function Canvas({ images }: CanvasProps) {
       </div>
 
       {lightboxImage && (
-        <Lightbox image={lightboxImage} onClose={closeLightbox} />
+        <Suspense fallback={null}>
+          <Lightbox image={lightboxImage} onClose={closeLightbox} />
+        </Suspense>
       )}
     </>
   );
