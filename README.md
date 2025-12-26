@@ -28,6 +28,19 @@ npm run preview
    npm run generate-manifest
    ```
    Это создаст `src/data/images.json` с размерами и aspect ratio всех изображений.
+3. Запусти оптимизацию изображений:
+   ```bash
+   npm run optimize-images
+   ```
+   Это создаст WebP-миниатюры в `public/images/thumbs/` для галереи (250w и 500w для retina).
+
+### Оптимизация изображений
+
+Галерея использует оптимизированные WebP-миниатюры для быстрой загрузки:
+- `public/images/thumbs/{id}-250w.webp` — для обычных экранов (1x)
+- `public/images/thumbs/{id}-500w.webp` — для retina-экранов (2x)
+
+Оригиналы в `public/images/` используются только в лайтбоксе при клике на изображение.
 
 ## Архитектура
 
