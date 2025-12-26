@@ -25,6 +25,9 @@ const WORLD_SIZE = 12000;
 const TARGET_ROW_HEIGHT = 320;
 const GAP = 30;
 
+// how many images to prerender
+const IMAGES_TO_PRERENDER = 10;
+
 function computeGlobalLayout(allImages: ImageMeta[]): PlacedImage[] {
   const placedImages: PlacedImage[] = [];
   let currentY = 0;
@@ -151,8 +154,7 @@ export function generatePrerender(): string {
 
   const layout = computeGlobalLayout(images);
 
-  // Generous viewport to cover most devices
-  const visible = getInitialVisibleImages(layout, 2000, 1200);
+  const visible = getInitialVisibleImages(layout, 800, 900).slice(0, IMAGES_TO_PRERENDER);
 
   console.log(`Pre-rendering ${visible.length} initial images`);
 
