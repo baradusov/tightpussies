@@ -3,7 +3,9 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 
 export function bootstrap() {
-  // Remove pre-rendered HTML when React takes over
+  // Remove loading indicators when React takes over
+  document.documentElement.classList.remove('loading')
+  document.getElementById('loading-bar')?.remove()
   document.getElementById('prerender')?.remove()
 
   createRoot(document.getElementById('root')!).render(
