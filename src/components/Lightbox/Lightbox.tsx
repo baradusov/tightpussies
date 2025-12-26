@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getImageUrl } from '../../lib/imageUrl';
+import { getOriginalUrl } from '../../lib/imageUrl';
 import type { ImageMeta } from '../../types';
 import styles from './Lightbox.module.css';
 
@@ -43,7 +43,7 @@ export function Lightbox({ image, onClose }: LightboxProps) {
         exit={{ opacity: 0 }}
       >
         <motion.img
-          src={getImageUrl(image.id)}
+          src={getOriginalUrl(image.id)}
           alt=""
           className={styles.image}
           initial={{ scale: 0.9, opacity: 0 }}

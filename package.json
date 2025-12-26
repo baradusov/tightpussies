@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "generate-manifest": "tsx scripts/generate-manifest.ts"
+    "generate-manifest": "tsx scripts/generate-manifest.ts",
+    "optimize-images": "tsx scripts/optimize-images.ts"
   },
   "dependencies": {
     "motion": "^12.23.26",
@@ -26,6 +27,7 @@
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
     "image-size": "^2.0.2",
+    "sharp": "^0.34.5",
     "tsx": "^4.21.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",

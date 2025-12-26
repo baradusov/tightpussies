@@ -2,6 +2,7 @@ import { motion, useMotionValue, useMotionValueEvent, animate } from 'motion/rea
 import { useState, useCallback, useRef, useMemo } from 'react';
 import type { PointerEvent, CSSProperties } from 'react';
 import { getVisibleImages } from '../../lib/globalLayout';
+import { getThumbUrl, getThumbSrcSet } from '../../lib/imageUrl';
 import { Lightbox } from '../Lightbox/Lightbox';
 import type { ImageMeta } from '../../types';
 import styles from './Canvas.module.css';
@@ -146,7 +147,7 @@ export function Canvas({ images }: CanvasProps) {
           {visibleImages.map(({ image, renderX, renderY }) => (
             <ImageWithPlaceholder
               key={`${image.id}-${renderX}-${renderY}`}
-              src={`/images/${image.id}.jpg`}
+              imageId={image.id}
               style={{
                 left: renderX,
                 top: renderY,
@@ -167,12 +168,12 @@ export function Canvas({ images }: CanvasProps) {
 }
 
 interface ImageWithPlaceholderProps {
-  src: string;
+  imageId: string;
   style?: CSSProperties;
   onClick?: () => void;
 }
 
-function ImageWithPlaceholder({ src, style, onClick }: ImageWithPlaceholderProps) {
+function ImageWithPlaceholder({ imageId, style, onClick }: ImageWithPlaceholderProps) {
   const [loaded, setLoaded] = useState(false);
 
   return (
@@ -182,7 +183,8 @@ function ImageWithPlaceholder({ src, style, onClick }: ImageWithPlaceholderProps
       onClick={onClick}
     >
       <img
-        src={src}
+        src={getThumbUrl(imageId)}
+        srcSet={getThumbSrcSet(imageId)}
         alt=""
         loading="lazy"
         draggable={false}
