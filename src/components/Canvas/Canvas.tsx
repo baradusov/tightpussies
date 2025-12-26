@@ -1,5 +1,4 @@
-import { motion, useMotionValue, useMotionValueEvent, animate } from 'motion/react';
-import { useState, useCallback, useRef, useMemo, lazy, Suspense } from 'react';
+import { useState, useCallback, useRef, useMemo, lazy, Suspense, useEffect } from 'react';
 import type { PointerEvent, CSSProperties } from 'react';
 import { getVisibleImages } from '../../lib/globalLayout';
 import { getThumbUrl, getThumbSrcSet } from '../../lib/imageUrl';
@@ -13,27 +12,37 @@ interface CanvasProps {
 }
 
 export function Canvas({ images }: CanvasProps) {
-  const panX = useMotionValue(0);
-  const panY = useMotionValue(0);
-
   const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
   const [lightboxImage, setLightboxImage] = useState<ImageMeta | null>(null);
   const [isGrabbing, setIsGrabbing] = useState(false);
 
+  const panRef = useRef({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const hasDragged = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
   const dragStartPos = useRef({ x: 0, y: 0, time: 0 });
   const velocity = useRef({ x: 0, y: 0 });
   const lastTime = useRef(0);
-  const animationRef = useRef<{ x?: ReturnType<typeof animate>; y?: ReturnType<typeof animate> }>({});
+  const animationFrameRef = useRef<number | null>(null);
 
-  useMotionValueEvent(panX, 'change', (x) => {
-    setPanPosition((prev) => ({ ...prev, x }));
-  });
-  useMotionValueEvent(panY, 'change', (y) => {
-    setPanPosition((prev) => ({ ...prev, y }));
-  });
+  // Update DOM transform directly for smooth performance
+  const updateTransform = useCallback((x: number, y: number) => {
+    panRef.current = { x, y };
+    if (containerRef.current) {
+      containerRef.current.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+    }
+  }, []);
+
+  // Sync state for React (throttled to avoid excessive re-renders)
+  const syncStateRef = useRef<number | null>(null);
+  const syncState = useCallback(() => {
+    if (syncStateRef.current) return;
+    syncStateRef.current = requestAnimationFrame(() => {
+      setPanPosition({ ...panRef.current });
+      syncStateRef.current = null;
+    });
+  }, []);
 
   const visibleImages = useMemo(() => {
     const viewX = -panPosition.x;
@@ -43,10 +52,45 @@ export function Canvas({ images }: CanvasProps) {
     return getVisibleImages(viewX, viewY, viewWidth, viewHeight, images);
   }, [panPosition.x, panPosition.y, images]);
 
+  // Custom inertia animation with decay
+  const startInertia = useCallback((velX: number, velY: number) => {
+    const decay = 0.95; // Friction factor
+    const minVelocity = 0.5;
+
+    let vx = velX;
+    let vy = velY;
+
+    const tick = () => {
+      vx *= decay;
+      vy *= decay;
+
+      // Stop when velocity is negligible
+      if (Math.abs(vx) < minVelocity && Math.abs(vy) < minVelocity) {
+        animationFrameRef.current = null;
+        syncState();
+        return;
+      }
+
+      const newX = panRef.current.x + vx * 0.016; // ~60fps frame time
+      const newY = panRef.current.y + vy * 0.016;
+      updateTransform(newX, newY);
+      syncState();
+
+      animationFrameRef.current = requestAnimationFrame(tick);
+    };
+
+    animationFrameRef.current = requestAnimationFrame(tick);
+  }, [updateTransform, syncState]);
+
+  const stopInertia = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+  }, []);
+
   const handlePointerDown = useCallback((e: PointerEvent) => {
-    // Stop any ongoing animations
-    animationRef.current.x?.stop();
-    animationRef.current.y?.stop();
+    stopInertia();
 
     isDragging.current = true;
     setIsGrabbing(true);
@@ -57,7 +101,7 @@ export function Canvas({ images }: CanvasProps) {
     lastTime.current = now;
     velocity.current = { x: 0, y: 0 };
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  }, []);
+  }, [stopInertia]);
 
   const handlePointerMove = useCallback((e: PointerEvent) => {
     if (!isDragging.current) return;
@@ -74,9 +118,8 @@ export function Canvas({ images }: CanvasProps) {
     const dt = now - lastTime.current;
     if (dt > 0) {
       // Smooth velocity calculation
-      const newVelX = (deltaX / dt) * 1000; // pixels per second
+      const newVelX = (deltaX / dt) * 1000;
       const newVelY = (deltaY / dt) * 1000;
-      // Smooth the velocity with previous value
       velocity.current = {
         x: velocity.current.x * 0.5 + newVelX * 0.5,
         y: velocity.current.y * 0.5 + newVelY * 0.5,
@@ -87,11 +130,14 @@ export function Canvas({ images }: CanvasProps) {
 
     // Add mass feeling - canvas starts slow and ramps up
     const dragDuration = now - dragStartPos.current.time;
-    const rampUp = Math.min(1, dragDuration / 200); // Ramp up over 200ms
-    const dragSmoothing = 0.2 + rampUp * 0.35; // Start at 0.2, max at 0.55
-    panX.set(panX.get() + deltaX * dragSmoothing);
-    panY.set(panY.get() + deltaY * dragSmoothing);
-  }, [panX, panY]);
+    const rampUp = Math.min(1, dragDuration / 200);
+    const dragSmoothing = 0.2 + rampUp * 0.35;
+
+    const newX = panRef.current.x + deltaX * dragSmoothing;
+    const newY = panRef.current.y + deltaY * dragSmoothing;
+    updateTransform(newX, newY);
+    syncState();
+  }, [updateTransform, syncState]);
 
   const handlePointerUp = useCallback((e: PointerEvent) => {
     if (!isDragging.current) return;
@@ -104,19 +150,9 @@ export function Canvas({ images }: CanvasProps) {
     const velY = velocity.current.y;
 
     if (Math.abs(velX) > 50 || Math.abs(velY) > 50) {
-      animationRef.current.x = animate(panX, panX.get() + velX * 0.8, {
-        type: 'decay',
-        velocity: velX,
-        decay: 0.92,
-      } as any);
-
-      animationRef.current.y = animate(panY, panY.get() + velY * 0.8, {
-        type: 'decay',
-        velocity: velY,
-        decay: 0.92,
-      } as any);
+      startInertia(velX, velY);
     }
-  }, [panX, panY]);
+  }, [startInertia]);
 
   const handleImageClick = useCallback((imageId: string) => {
     if (hasDragged.current) return;
@@ -127,6 +163,16 @@ export function Canvas({ images }: CanvasProps) {
   const closeLightbox = useCallback(() => {
     setLightboxImage(null);
   }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopInertia();
+      if (syncStateRef.current) {
+        cancelAnimationFrame(syncStateRef.current);
+      }
+    };
+  }, [stopInertia]);
 
   return (
     <>
@@ -141,9 +187,10 @@ export function Canvas({ images }: CanvasProps) {
           touchAction: 'none',
         }}
       >
-        <motion.div
+        <div
+          ref={containerRef}
           className={styles.panContainer}
-          style={{ x: panX, y: panY }}
+          style={{ transform: `translate3d(${panPosition.x}px, ${panPosition.y}px, 0)` }}
         >
           {visibleImages.map(({ image, renderX, renderY }) => (
             <ImageWithPlaceholder
@@ -158,7 +205,7 @@ export function Canvas({ images }: CanvasProps) {
               onClick={() => handleImageClick(image.id)}
             />
           ))}
-        </motion.div>
+        </div>
       </div>
 
       {lightboxImage && (
