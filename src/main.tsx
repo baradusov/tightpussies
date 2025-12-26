@@ -1,13 +1,13 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
 import './index.css'
-import App from './App.tsx'
 
-// Remove pre-rendered HTML when React takes over
-document.getElementById('prerender')?.remove()
+// Defer loading React and all interactivity until after first paint
+const loadApp = () => {
+  import('./bootstrap').then(({ bootstrap }) => bootstrap())
+}
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+// Use requestIdleCallback if available, otherwise setTimeout
+if ('requestIdleCallback' in window) {
+  requestIdleCallback(loadApp)
+} else {
+  setTimeout(loadApp, 1)
+}

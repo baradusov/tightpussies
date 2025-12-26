@@ -132,10 +132,12 @@ function generatePrerenderedHtml(images: PlacedImage[]): string {
     background-size: 260% 260%;
   `.replace(/\s+/g, ' ').trim();
 
-  const imageElements = images.map((img) => {
+  const imageElements = images.map((img, index) => {
     const containerStyle = `${imageContainerBase} left: ${img.x}px; top: ${img.y}px; width: ${img.width}px; height: ${img.height}px;`;
+    // Add fetchpriority="high" to first few images to optimize LCP
+    const priority = index < 4 ? ' fetchpriority="high"' : '';
 
-    return `<div style="${containerStyle}"><img src="/images/thumbs/${img.id}-250w.webp" srcset="/images/thumbs/${img.id}-250w.webp 1x, /images/thumbs/${img.id}-500w.webp 2x" alt="" loading="eager" style="width:100%;height:100%;object-fit:cover;border-radius:8px;"></div>`;
+    return `<div style="${containerStyle}"><img src="/images/thumbs/${img.id}-250w.webp" srcset="/images/thumbs/${img.id}-250w.webp 1x, /images/thumbs/${img.id}-500w.webp 2x" alt="" loading="eager"${priority} style="width:100%;height:100%;object-fit:cover;border-radius:8px;"></div>`;
   }).join('');
 
   return `<div id="prerender" style="${containerStyle}"><div>${imageElements}</div></div>`;

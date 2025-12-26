@@ -192,10 +192,11 @@ export function Canvas({ images }: CanvasProps) {
           className={styles.panContainer}
           style={{ transform: `translate3d(${panPosition.x}px, ${panPosition.y}px, 0)` }}
         >
-          {visibleImages.map(({ image, renderX, renderY }) => (
+          {visibleImages.map(({ image, renderX, renderY }, index) => (
             <ImageWithPlaceholder
               key={`${image.id}-${renderX}-${renderY}`}
               imageId={image.id}
+              priority={index < 4}
               style={{
                 left: renderX,
                 top: renderY,
@@ -219,11 +220,12 @@ export function Canvas({ images }: CanvasProps) {
 
 interface ImageWithPlaceholderProps {
   imageId: string;
+  priority?: boolean;
   style?: CSSProperties;
   onClick?: () => void;
 }
 
-function ImageWithPlaceholder({ imageId, style, onClick }: ImageWithPlaceholderProps) {
+function ImageWithPlaceholder({ imageId, priority, style, onClick }: ImageWithPlaceholderProps) {
   const [loaded, setLoaded] = useState(false);
 
   return (
@@ -236,7 +238,8 @@ function ImageWithPlaceholder({ imageId, style, onClick }: ImageWithPlaceholderP
         src={getThumbUrl(imageId)}
         srcSet={getThumbSrcSet(imageId)}
         alt=""
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : undefined}
         draggable={false}
         className={`${styles.image} ${loaded ? styles.imageVisible : ''}`}
         onLoad={() => setLoaded(true)}
