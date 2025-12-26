@@ -210,12 +210,22 @@ export function Canvas({ images }: CanvasProps) {
       </div>
 
       {lightboxImage && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<LoadingCursor />}>
           <Lightbox image={lightboxImage} onClose={closeLightbox} />
         </Suspense>
       )}
     </>
   );
+}
+
+function LoadingCursor() {
+  useEffect(() => {
+    document.documentElement.classList.add('loading');
+    return () => {
+      document.documentElement.classList.remove('loading');
+    };
+  }, []);
+  return null;
 }
 
 interface ImageWithPlaceholderProps {
