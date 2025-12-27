@@ -1,14 +1,19 @@
 .backdrop {
   position: fixed;
   inset: 0;
+  /* Solid background first for iOS fallback, then blur enhances it */
+  background-color: rgba(0, 0, 0, 0.85);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
-  background-color: rgba(0, 0, 0, 0.03);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   cursor: pointer;
   animation: fadeIn 0.2s ease-out forwards;
+  /* iOS Safari fix for fixed positioning */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 .backdropClosing {
@@ -18,10 +23,17 @@
 .image {
   max-width: 90vw;
   max-height: 90vh;
+  /* iOS Safari: use dvh for accurate viewport height */
+  max-height: 90dvh;
   object-fit: contain;
   border-radius: 8px;
   cursor: default;
   animation: scaleIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  /* iOS Safari: force GPU layer to prevent rendering issues */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .imageClosing {
