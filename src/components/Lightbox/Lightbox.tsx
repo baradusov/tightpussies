@@ -27,9 +27,14 @@ export function Lightbox({ image, onClose }: LightboxProps) {
   }, [handleClose]);
 
   useEffect(() => {
+    // Prevent background interaction while lightbox is open
     document.body.style.overflow = 'hidden';
+    // iOS Safari: force layer to prevent rendering issues
+    document.body.style.touchAction = 'none';
+
     return () => {
       document.body.style.overflow = '';
+      document.body.style.touchAction = '';
     };
   }, []);
 
