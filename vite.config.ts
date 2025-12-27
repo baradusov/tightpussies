@@ -18,40 +18,44 @@ function prerenderPlugin(): Plugin {
   }
 }
 
-// Plugin to inline only main CSS into HTML (not lazy-loaded chunks)
+// Plugin to inline all CSS into HTML
 function inlineCssPlugin(): Plugin {
   return {
     name: 'inline-css',
     enforce: 'post',
     apply: 'build',
-    transformIndexHtml: {
-      order: 'post',
-      handler(html, { bundle }) {
-        if (!bundle) return html
+    generateBundle(_, bundle) {
+      // Find the HTML file and all CSS files
+      let htmlFile: { fileName: string; source: string } | null = null
+      const cssFiles: { fileName: string; source: string }[] = []
 
-        // Find main CSS file (index.css), skip chunk CSS (like Lightbox)
-        for (const [fileName, chunk] of Object.entries(bundle)) {
-          if (fileName.endsWith('.css') && chunk.type === 'asset') {
-            // Only inline index/main CSS, not component chunks
-            const isMainCss = fileName.includes('index')
-
-            if (isMainCss) {
-              const cssContent = chunk.source as string
-
-              // Replace link tag with inline style
-              html = html.replace(
-                new RegExp(`<link[^>]*href="[^"]*${fileName.split('/').pop()}"[^>]*>`),
-                `<style>${cssContent}</style>`
-              )
-
-              // Remove inlined CSS from bundle
-              delete bundle[fileName]
-            }
-          }
+      for (const [fileName, chunk] of Object.entries(bundle)) {
+        if (fileName.endsWith('.html') && chunk.type === 'asset') {
+          htmlFile = { fileName, source: chunk.source as string }
         }
-
-        return html
+        if (fileName.endsWith('.css') && chunk.type === 'asset') {
+          cssFiles.push({ fileName, source: chunk.source as string })
+        }
       }
+
+      if (!htmlFile || cssFiles.length === 0) return
+
+      let html = htmlFile.source
+
+      // Inline all CSS files
+      for (const css of cssFiles) {
+        const cssFileName = css.fileName.split('/').pop()
+        // Replace link tag with inline style
+        html = html.replace(
+          new RegExp(`<link[^>]*href="[^"]*${cssFileName}"[^>]*>`),
+          `<style>${css.source}</style>`
+        )
+        // Remove CSS file from bundle
+        delete bundle[css.fileName]
+      }
+
+      // Update HTML in bundle
+      ;(bundle[htmlFile.fileName] as { source: string }).source = html
     }
   }
 }
@@ -60,6 +64,6 @@ function inlineCssPlugin(): Plugin {
 export default defineConfig({
   plugins: [react(), prerenderPlugin(), inlineCssPlugin()],
   build: {
-    cssCodeSplit: true,
+    cssCodeSplit: false,
   }
 })
