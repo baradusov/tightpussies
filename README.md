@@ -45,7 +45,6 @@ npm run preview
 ## Архитектура
 
 - **React + TypeScript + Vite** — основной стек
-- **Motion (Framer Motion)** — анимации и drag-механика
 
 ### Как работает бесконечный canvas
 
